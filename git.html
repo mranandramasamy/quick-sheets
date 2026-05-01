@@ -1,0 +1,36 @@
+git status
+git add FILENAME
+git commit -m "COMMIT_MESSAGE"
+git push 
+
+git config --global credential.helper store
+
+git blame -L 10,20 FILENAME
+
+git stash
+git stash list
+git stash pop
+git stash apply "stash@{0}"
+git stash drop "stash@{0}"
+
+git diff
+git diff FILENAME
+git diff --staged
+git diff branch1..branch2
+
+git restore FILENAME
+git restore --staged FILENAME
+
+git reset --soft HEAD~1 # undo commit, keep changes
+git reset --hard HEAD~1 # undo commit, undo changes
+
+git cherry-pick COMMIT_HASH
+
+git rebase main
+
+git clean -fd # removes untracked files
+
+git bisect start
+
+git reflog
+

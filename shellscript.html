@@ -1,0 +1,33 @@
+#!/bin/bash
+
+echo "Hello world !!"
+
+name="Anand"
+
+if [ "$name" = "Anand" ]; then
+  echo "Welcome Master"
+else
+  echo "Who is $name ?"
+fi
+
+for i in 1 2 3 4
+do
+  echo "i$i "
+done
+
+count=1
+while [ $count -le 3 ]
+do
+  echo $count
+  ((count++))
+done
+
+greet() {
+  echo "Greetings $1"
+}
+greet "Cotton Candy"
+
+
+read -p "Exit ??" exitQ
+
+

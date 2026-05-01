@@ -1,0 +1,117 @@
+
+
+keywords:
+pipeline
+agent
+stages
+stage
+steps
+environment
+credentials
+options
+when
+post
+tools
+input
+parallel
+triggers
+stash / unstash
+archiveArtifacts
+
+A Basic structure:
+pipeline {
+  agent any
+  environment {}
+  options {}
+  stages {
+    stage('Build') {
+      when {}
+      steps {}
+    }
+  }
+  post {}
+}
+
+An example:
+pipeline {
+  agent none
+  options {
+    timeout(time: 29, unit: 'MINUTES')
+    timestamps()
+    disableConcurrentBuilds()
+  }
+  environment {
+    APP_NAME = 'my-app'
+    NODE_ENV = 'production'
+    API_KEY = credentials('api-key-id')
+  }
+  triggers {
+    cron('H/30 * * * *')
+  }
+  stages {
+    stage('Checkout') {
+      agent any
+      steps {
+        git url: 'https://github.com/user/repo.git'
+        echo "Checked out code"
+      }
+    }
+    stage('Install Dependencies') {
+      agent { docker 'node:18' }
+      steps {
+        sh 'npm install'
+      }
+    }
+    stage('Build') {
+      agent { docker 'node:18' }
+      steps {
+        sh 'npm run build'
+        stash name: 'build-artifacts', includes: 'dist/**'
+      }
+    }
+    stage('Parallel Tests') {
+      parallel {
+        stage('Unit Tests') {
+          agent any
+          steps {
+            sh 'npm run test:unit'
+          }
+        }
+        stage('Integration Tests') {
+          agent any
+          steps {
+            sh 'npm run test:int'
+          }
+        }
+      }
+    }
+    stage('Approval') {
+      steps {
+       input message: 'Approve deployment to productions ??'
+      }
+    }
+    stage('Deploy') {
+      agent any
+      when {
+        branch 'main'
+      }
+      steps {
+        unstash 'build-artifacts'
+        echo "Deploying ${APP_NAME} in ${NODE_ENV}"
+        sh 'echo Deploy step here'
+      }
+    }
+  }
+  post {
+    always {
+      echo 'Cleaning up workspace...'
+    }
+    success {
+      echo "Build succeeded <3"
+      archiveArtifacts artifacts: 'dist/**'
+    }
+    failure {
+      echo 'Build failed :('
+    }
+  }
+}

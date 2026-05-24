@@ -1,0 +1,71 @@
+
+def generate_hybrid_sequence(n):
+    """
+    Hybrid spaced-repetition sequence generator.
+
+    Strategy:
+    1. Incremental learning
+    2. Sliding window reinforcement
+    3. Sparse recall grouping
+
+    Returns:
+        Single dimensional array
+    """
+
+    result = []
+
+    # -----------------------------------
+    # PHASE 1 — Incremental Learning
+    # -----------------------------------
+    #
+    # 1
+    # 1 2
+    # 1 2 3
+    # ...
+    #
+
+    for end in range(1, n + 1):
+        result.extend(range(1, end + 1))
+
+    # -----------------------------------
+    # PHASE 2 — Sliding Reinforcement
+    # -----------------------------------
+    #
+    # window size = 4
+    #
+    # 1 2 3 4
+    # 2 3 4 5
+    # 3 4 5 6
+    #
+
+    WINDOW_SIZE = 4
+
+    if n >= WINDOW_SIZE:
+        for start in range(1, n - WINDOW_SIZE + 2):
+            result.extend(range(start, start + WINDOW_SIZE))
+
+    # -----------------------------------
+    # PHASE 3 — Sparse Recall
+    # -----------------------------------
+    #
+    # Interleaved recall:
+    #
+    # 1 4 7 10 ...
+    # 2 5 8 11 ...
+    # 3 6 9 12 ...
+    #
+
+    GAP = 3
+
+    for offset in range(GAP):
+        i = offset + 1
+
+        while i <= n:
+            result.append(i)
+            i += GAP
+
+    return result
+
+sequence = generate_hybrid_sequence(20)
+
+

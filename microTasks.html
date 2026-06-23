@@ -1,0 +1,827 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Micro Tasks</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        * {
+            font-family: helvetica,arial,sans-serif;
+            font-size: 14px;
+        }
+
+        .div-main-menu-bar {
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            width: 98%;
+            background-color: white;
+        }
+
+        #div-sections {
+            margin-top: 150px;
+        }
+
+        .div-head-title {
+            font-weight: bold;
+            font-size: 23px;
+        }
+
+        .span-title-description {
+            font-size: 18px;
+            font-weight: lighter;
+            margin-left: 20px;
+        }
+
+        .div-menu-bar {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .span-menu-button {
+            font-size: 14px;
+            border: 1px solid grey;
+            border-radius: 6px;
+            padding: 3px;
+            padding-left: 6px;
+            padding-right: 6px;
+            background-color: rgb(240, 240, 240);
+            max-width: 100px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .span-section-title {
+            font-weight: bold;
+            font-size: 21px;
+        }
+
+        .div-section-count {
+            font-weight: bold;
+            font-size: 21px;
+            margin-left: 20px;
+        }
+
+        .div-section-tags {
+            font-size: 16px;
+            margin-left: 30px;
+            opacity: 0.6;
+        }
+
+        .div-section-edit {
+            font-size: 16px;
+            margin-left: 5px;
+            opacity: 0.6;
+        }
+
+        .div-section-cards {
+            display: -webkit-flex;
+            -webkit-flex-direction: row;
+            -webkit-flex-wrap: wrap;
+        }
+
+        .div-section-card {
+            border: 1px solid gray;
+            border-radius: 6px;
+            padding-left: 10px;
+            padding-right: 10px;
+            min-width: 50px;
+            max-width: 100px;
+            min-height: 50px;
+            margin: 5px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .div-section-card-add {
+            border: 1px solid gray;
+            border-radius: 6px;
+            padding-left: 10px;
+            padding-right: 10px;
+            min-height: 50px;
+            width: 50px;
+            margin: 5px;
+            text-align: center;
+            font-size: 32px;
+            color: gray;
+            cursor: pointer;
+        }
+
+        .closed-card {
+            border: 1px dashed lightgray;
+            color: lightgray;
+        }
+
+        .archived-card {
+            border: 1px dashed gray;
+            color: gray;
+        }
+
+        .editing-card {
+            border: 2px solid black;
+        }
+
+        .important-card {
+            font-weight: bolder;
+            text-shadow: 1px 1px rgba(200, 200, 200, 1.0);
+            font-size: 16px;
+        }
+
+        .button-tags-edit {
+            border: 0px;
+            background: none;
+        }
+
+        .context-menu {
+            position: absolute;
+            text-align: center;
+            background-color: rgba(200, 200, 200, 1.0);
+            border: 1px solid gray;
+            border-radius: 6px;
+        }
+
+        .context-menu ul {
+            padding: 0px;
+            margin: 0px;
+            min-width: 100px;
+            list-style: none;
+        }
+
+        .context-menu ul li {
+            padding-bottom: 3px;
+            padding-top: 3px;
+            border: 1px solid gray;
+            text-decoration: none;
+            color: black;
+        }
+
+        .context-menu ul li:hover {
+            background-color: gray;
+            cursor: pointer;
+        }
+
+        .input-edit-saver {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .button-edit-saver {
+            outline: none;
+            border-radius: 6px;
+        }
+
+        .input-title-edit-saver {
+            border-left: none;
+            border-top: none;
+            border-right: none;
+            outline: none;
+        }
+
+        .div-section-archived {
+            font-style: oblique;
+            color: gray;
+        }
+
+        #input-hash {
+            width: 85%;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .ul-options-projects-menu {
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="div-main-menu-bar">
+            <br />
+            <div class="div-head-title">Micro Tasks <span class="span-title-description">[ Your personal task manager.. In your local storage !! ]</span></div>
+            <hr />
+            <div class="div-menu-bar">
+                <span class="span-menu-button" id="span-menu-button-gethash" onclick="getHash()">Get Hash</span>
+                <span class="span-menu-button" id="span-menu-button-newproject" onclick="createNewProject()">New Project (+)</span>
+                <span class="span-menu-button" id="span-menu-button-toggle-tags" onclick="toggleTags()">Show Tags 🏷</span>
+                <span class="span-menu-button" id="span-menu-button-toggle-archived" onclick="toggleArchived()">Show Archived 📁</span>
+                <span class="span-menu-button" id="span-menu-button-sync">On sync</span>
+                <span class="span-menu-button" id="span-menu-button-help" data-toggle="modal" data-target="#myModal">Help</span>
+            </div>
+            <hr />
+            <div id="div-hash">
+                <input type="text" id="input-hash" />
+                <span class="span-menu-button" id="span-menu-button-sethash" onclick="setHash()">Set</span>
+                <span class="span-menu-button" id="span-menu-button-hidehash" onclick="hideHash()">Close</span>
+                <hr />
+            </div>
+        </div>
+        <div id="div-sections"></div>
+        <br /><br /><br /><br /><br /><br /><br />
+    </div>
+    <div id="contextMenu" class="context-menu" style="display:none"></div>
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Welcome to Micro Tasks</h4>
+                </div>
+                <div class="modal-body">
+                    <strong>Your personal task manager.. In your browser storage.. It doesn't store data beyond your local !</strong><br /><br />
+                    <p>We don't use this to track the projects like Jira.. We use this to track small items which we don't want to forget. Could be chunks of a larger stuff we do.</p>
+                    <p>We have options for</p>
+                    <ul>
+                        <li>Creating a project item [choose "New Project (+)" from menu]</li>
+                        <ul>
+                            <li>Create a card, which is sub-item for the project</li>
+                            <li>we can modify a card [ double click | right click -> choose "Edit" & hit Enter ]</li>
+                            <li>If we complete any, close a card [ triple click | right click -> choose "Close" ]</li>
+                            <li>We can re-open at any time [ right click -> choose "Re-Open" ]</li>
+                            <li>A card can be archived too.. for future uses. [ right click -> choose "Archive" ]</li>
+                            <li>And of course, we can delete any card [ right click -> choose "Delete" ]</li>
+                        </ul>
+                        <li>Modify project title [ double click | right click -> choose "Edit" & hit Enter ]</li>
+                        <li>Archive a project [ right click -> choose "Archive" ]</li>
+                        <li>Delete a project [ right click -> choose "Delete" ]</li>
+                        <li>At last we can prioritize a project [ right click -> choose "Prioritize" ]</li>
+                    </ul>
+                    <p>And we have toggle button on menu to show/hide archived cards & projects</p>
+                    <p><strong>How it does stores the data ?</strong></p>
+                    <p>It uses Indexed DB from browser, whenever we make a change, it will automatically store the data and update sync status on the top-right menu.</p>
+                    <p></p>
+                    <p>When the page is refreshed, the data persists.</p>
+                    <p>But when clear cache is done, the data may get lost. We are working on it to make the DB persists.</p>
+                    <p>Kindly make sure to be careful about clearing cache !!</p>
+                    <h4>Thank you</h4>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const TEMP_CARD = "<div id='div-section-{SECTION}-card-{CARD}' class='div-section-card' onclick='checkClick({SECTION}, {CARD}, `card`)'>{TASK}</div>";
+        const TEMP_CARD_IMPORTANT = "<div id='div-section-{SECTION}-card-{CARD}' class='div-section-card important-card' onclick='checkClick({SECTION}, {CARD}, `card`)'>{TASK}</div>";
+        const TEMP_CARD_CLOSED = "<div id='div-section-{SECTION}-card-{CARD}' class='div-section-card closed-card' onclick='checkClick({SECTION}, {CARD}, `card`)'>{TASK}</div>";
+        const TEMP_CARD_ARCHIVED = "<div id='div-section-{SECTION}-card-{CARD}' class='div-section-card archived-card' onclick='checkClick({SECTION}, {CARD}, `card`)'>{TASK}</div>";
+        const TEMP_CARD_ADD = "<div id='div-section-card-add-{SECTION}' class='div-section-card-add' onclick='addTask({SECTION})'>+</div>";
+        const TEMP_CARDS = "<div id='div-section-cards-{SECTION}' class='div-section-cards'>{CARD}</div>";
+        const TEMP_HEADER = "<div id='div-section-header-{SECTION}' class='div-section-header'><span class='span-section-title' id='span-section-title-{SECTION}' onclick='checkClick({SECTION}, null, `title`)'>{TITLE}</span><span class='div-section-count' id='div-section-count-{SECTION}'>{COUNT}</span><span class='div-section-tags'>{TAGS}</span></div>";
+        const TEMP_SECTION = "<div id='div-section-{SECTION}'>{SECTION_CONTENT}</div><br/>";
+        const TEMP_SECTION_ARCHIVED = "<div id='div-section-{SECTION}' class='div-section-archived'>{SECTION_CONTENT}</div><br/>";
+        const TEMP_RIGHTCLICK_CARD_EDIT = "<li><div onclick='editCard({SECTION}, {CARD})'>Edit</div></li>";
+        const TEMP_RIGHTCLICK_CARD_CLOSE = "<li><div onclick='closeCard({SECTION}, {CARD})'>Close</div></li>";
+        const TEMP_RIGHTCLICK_CARD_ARCHIVE = "<li><div onclick='archiveCard({SECTION}, {CARD})'>Archive</div></li>";
+        const TEMP_RIGHTCLICK_CARD_REOPEN = "<li><div onclick='reOpenCard({SECTION}, {CARD})'>Re-Open</div></li>";
+        const TEMP_RIGHTCLICK_CARD_DELETE = "<li><div onclick='deleteCard({SECTION}, {CARD})'>Delete</div></li>";
+        const TEMP_RIGHTCLICK_CARD_PRIORITIZE = "<li><div onclick='prioritizeTask({SECTION}, {CARD})'>Prioritize</div></li>";
+        const TEMP_RIGHTCLICK_CARD_IMPORTANT = "<li><div onclick='importantTask({SECTION}, {CARD})'>Important</div></li>";
+        const TEMP_RIGHTCLICK_CARD_UNIMPORTANT = "<li><div onclick='unImportantTask({SECTION}, {CARD})'>Un-important</div></li>";
+        const TEMP_RIGHTCLICK_CARD_MOVE = "<li><div onclick='moveCard({SECTION}, {CARD})'>Move to</div></li>";
+        const TEMP_RIGHTCLICK_TITLE_EDIT = "<li><div onclick='editTitle({SECTION})'>Edit</div></li>";
+        const TEMP_RIGHTCLICK_TITLE_ARCHIVE = "<li><div onclick='archiveTitle({SECTION})'>Archive</div></li>";
+        const TEMP_RIGHTCLICK_TITLE_REOPEN = "<li><div onclick='reOpenTitle({SECTION})'>Re-Open</div></li>";
+        const TEMP_RIGHTCLICK_TITLE_PRIORITIZE = "<li><div onclick='prioritizeTitle({SECTION})'>Prioritize</div></li>";
+        const TEMP_RIGHTCLICK_TITLE_DELETE = "<li><div onclick='deleteTitle({SECTION})'>Delete</div></li>";
+        const TEMP_INPUT_EDIT = "<textarea class='input-edit-saver' id='input-section-{SECTION}-card-{CARD}' onkeypress='updateTaskName({SECTION}, {CARD})'>{CURRENT_VALUE}</textarea>";
+        const TEMP_INPUT_TITLE_EDIT = "<input class='input-title-edit-saver' id='input-section-title-{SECTION}' onkeypress='updateTitleName({SECTION})' value='{CURRENT_VALUE}' />";
+        const TEMP_INPUT_EDIT_OK_BUTTON = "<button class='button-edit-saver' onclick='setNewTaskDetail({SECTION}, {CARD})'>OK</button>";
+
+        let clickCount = 0;
+        let clickTimeout;
+        let showArchived = false;
+        let tagsEnabled = false;
+
+        let sections = [];
+        let recentChanges = false;
+
+        document.onclick = hideMenu;
+
+        function hideMenu() {
+            if (!document.getElementById("contextMenu").innerHTML.includes("ul-options-projects-placeholder")) {
+                document.getElementById("contextMenu").style.display = "none";
+            } else {
+                document.getElementById("contextMenu").innerHTML = document.getElementById("contextMenu").innerHTML.replace("ul-options-projects-placeholder", "ul-options-projects-menu");
+            }
+        }
+
+        function checkClick(section, card, place) {
+            clickCount++;
+            if (clickTimeout) {
+                clearTimeout(clickTimeout);
+            }
+            setTimeout(() => {
+                if (clickCount === 3) {
+                    // CLOSE TASK
+                    TripleClick(section, card, place);
+                }
+                if (clickCount === 2) {
+                    // EDIT TASK
+                    DoubleClick(section, card, place);
+                }
+                clickCount = 0;
+                clickTimeout = 0;
+            }, 500);
+        }
+
+        function SingelClick(section, card, place) {
+            console.log("single click section:" + section + " card:" + card + " place:" + place);
+        }
+
+        function DoubleClick(section, card, place) {
+            console.log("double click section:" + section + " card:" + card + " place:" + place);
+            if (place == "card") {
+                editCard(section, card);
+            } else if (place == "title") {
+                editTitle(section);
+            }
+        }
+
+        function TripleClick(section, card, place) {
+            console.log("triple click section:" + section + " card:" + card + " place:" + place);
+            if (sections[section]["tasks"][card]["state"] == "close") {
+                sections[section]["tasks"][card]["state"] = "active";
+            } else {
+                sections[section]["tasks"][card]["state"] = "close";
+            }
+            renderSections();
+            recentChanges = true;
+        }
+
+        function toggleArchived() {
+            showArchived = !showArchived;
+            updateArchiveToggle(showArchived);
+        }
+
+        function updateArchiveToggle(showArchived) {
+            if (showArchived == true) {
+                document.getElementById("span-menu-button-toggle-archived").innerHTML = "Hide Archived 📁";
+            } else {
+                document.getElementById("span-menu-button-toggle-archived").innerHTML = "Show Archived 📁";
+            }
+            renderSections();
+        }
+
+        function toggleTags() {
+            tagsEnabled = !tagsEnabled;
+            updateTagsToggle(tagsEnabled);
+        }
+
+        function updateTagsToggle(tagsEnabled) {
+            if (tagsEnabled == true) {
+                document.getElementById("span-menu-button-toggle-tags").innerHTML = "Hide Tags 🏷️";
+            } else {
+                document.getElementById("span-menu-button-toggle-tags").innerHTML = "Show Tags 🏷️";
+            }
+            renderSections();
+        }
+
+        function getPossibleCardOptions(cardName) {
+            console.log(cardName);
+            let options = "<ul>";
+            cardName = cardName.replace("div-section-", "").replace("-card-", ":");
+            let section = cardName.split(":");
+            if (section.length == 2) {
+                let card = sections[parseInt(section[0])]["tasks"][parseInt(section[1])];
+                if (card["state"] == "active") {
+                    options += TEMP_RIGHTCLICK_CARD_EDIT + TEMP_RIGHTCLICK_CARD_PRIORITIZE + TEMP_RIGHTCLICK_CARD_CLOSE + TEMP_RIGHTCLICK_CARD_IMPORTANT + TEMP_RIGHTCLICK_CARD_MOVE + TEMP_RIGHTCLICK_CARD_ARCHIVE + TEMP_RIGHTCLICK_CARD_DELETE;
+                } else if (card["state"] == "important") {
+                    options += TEMP_RIGHTCLICK_CARD_EDIT + TEMP_RIGHTCLICK_CARD_PRIORITIZE + TEMP_RIGHTCLICK_CARD_CLOSE + TEMP_RIGHTCLICK_CARD_UNIMPORTANT + TEMP_RIGHTCLICK_CARD_MOVE + TEMP_RIGHTCLICK_CARD_ARCHIVE + TEMP_RIGHTCLICK_CARD_DELETE;
+                } else if (card["state"] == "close") {
+                    options += TEMP_RIGHTCLICK_CARD_EDIT + TEMP_RIGHTCLICK_CARD_REOPEN + TEMP_RIGHTCLICK_CARD_MOVE + TEMP_RIGHTCLICK_CARD_DELETE;
+                } else {
+                    options += TEMP_RIGHTCLICK_CARD_EDIT + TEMP_RIGHTCLICK_CARD_CLOSE + TEMP_RIGHTCLICK_CARD_REOPEN + TEMP_RIGHTCLICK_CARD_DELETE;
+                }
+                options = options.replaceAll("{SECTION}", section[0]).replaceAll("{CARD}", section[1]);
+            }
+            return options + "</ul>";
+        }
+
+        function getPossibleTitleOptions(titleName) {
+            console.log(titleName);
+            section = titleName.replace("span-section-title-", "");
+            let options = "<ul>";
+            if ((section == "0") && (sections[section]["state"] == "active")) {
+                options += TEMP_RIGHTCLICK_TITLE_EDIT + TEMP_RIGHTCLICK_TITLE_ARCHIVE + TEMP_RIGHTCLICK_TITLE_DELETE;
+            } else if (sections[section]["state"] == "active") {
+                options += TEMP_RIGHTCLICK_TITLE_EDIT + TEMP_RIGHTCLICK_TITLE_PRIORITIZE + TEMP_RIGHTCLICK_TITLE_ARCHIVE + TEMP_RIGHTCLICK_TITLE_DELETE;
+            } else if (sections[section]["state"] == "archive") {
+                options += TEMP_RIGHTCLICK_TITLE_EDIT + TEMP_RIGHTCLICK_TITLE_PRIORITIZE + TEMP_RIGHTCLICK_TITLE_REOPEN + TEMP_RIGHTCLICK_TITLE_DELETE;
+            }
+            options = options.replaceAll("{SECTION}", section);
+            return options + "</ul>";
+        }
+
+        function rightClick(e) {
+            console.log("this is the one >>>>");
+            console.log(e);
+            let elemId = e.target.id;
+            if (elemId != null) {
+                if (e.target.localName.includes("div")) {
+                    e.preventDefault();
+
+                    let menu = document.getElementById("contextMenu");
+                    menu.innerHTML = getPossibleCardOptions(elemId);
+
+                    menu.style.display = 'block';
+                    if ((window.innerWidth - e.pageX) <= menu.offsetWidth) {
+                        menu.style.left = e.pageX - menu.offsetWidth + "px";
+                    } else {
+                        menu.style.left = e.pageX + "px";
+                    }
+                    if ((window.innerHeight - e.pageY) <= menu.offsetHeight) {
+                        menu.style.top = e.pageY - menu.offsetHeight + "px";
+                    } else {
+                        menu.style.top = e.pageY + "px";
+                    }
+                } else if (e.target.localName.includes("span")) {
+                    e.preventDefault();
+                    let menu = document.getElementById("contextMenu");
+                    menu.innerHTML = getPossibleTitleOptions(elemId);
+
+                    menu.style.display = 'block';
+
+                    if ((window.innerWidth - e.pageX) <= menu.offsetWidth) {
+                        menu.style.left = e.pageX - menu.offsetWidth + "px";
+                    } else {
+                        menu.style.left = e.pageX + "px";
+                    }
+                    if ((window.innerHeight - e.pageY) <= menu.offsetHeight) {
+                        menu.style.top = e.pageY - menu.offsetHeight + "px";
+                    } else {
+                        menu.style.top = e.pageY + "px";
+                    }
+                }
+            }
+        } // Closed rightClick(e) correctly here!
+
+        function moveCard(section, card) {
+            console.log("moving from", section, card);
+            let optionsContent = "<ul class='ul-options-projects-placeholder'>";
+            for (sectionIndex in sections) {
+                optionsContent += "<li><div onclick='moveCardTo(" + sectionIndex + ")'>&nbsp;" + sections[sectionIndex]["name"] + "</div></li>";
+            }
+            optionsContent += "</ul>";
+            showMoveToOptionsMenu(optionsContent);
+        }
+
+        function showMoveToOptionsMenu(optionsContent) {
+            let menu = document.getElementById("contextMenu");
+            let rect = menu.getBoundingClientRect();
+            menu.innerHTML = optionsContent;
+
+            console.log(optionsContent);
+
+            if ((window.innerWidth - rect.left) <= menu.offsetWidth) {
+                menu.style.left = rect.left - menu.offsetWidth + "px";
+            } else {
+                menu.style.left = rect.left + "px";
+            }
+            if ((window.innerHeight - rect.top) <= menu.offsetHeight) {
+                menu.style.top = rect.top - menu.offsetHeight + "px";
+            } else {
+                menu.style.top = rect.top + "px";
+            }
+            document.getElementById("contextMenu").style.display = "block";
+        }
+
+        function createNewProject() {
+            let newIndex = sections.length;
+            let newProject = {
+                "name": "New Project",
+                "state": "active",
+                "tags": [],
+                "tasks": []
+            };
+            sections.push(newProject);
+            renderSections();
+            editTitle(newIndex);
+            recentChanges = true;
+        }
+
+        function editTitle(section) {
+            console.log("editing title:", section);
+            let currentValue = document.getElementById("span-section-title-" + section).innerHTML;
+            console.log(currentValue);
+            if (!currentValue.includes("<input ")) {
+                let template = TEMP_INPUT_TITLE_EDIT.replaceAll("{SECTION}", section).replaceAll("{CURRENT_VALUE}", currentValue);
+                document.getElementById("span-section-title-" + section).innerHTML = template;
+                document.getElementById("input-section-title-" + section).focus();
+            }
+        }
+
+        function addTask(section) {
+            console.log("adding a new task in section", section);
+            let newIndex = sections[section]["tasks"].length;
+            sections[section]["tasks"].push({
+                "title": "",
+                "state": "active"
+            });
+            renderSections();
+            editCard(section, newIndex);
+            recentChanges = true;
+        }
+
+        function editCard(section, card) {
+            console.log("editing card:", section, card);
+            document.getElementById("div-section-" + section + "-card-" + card).className += " editing-card";
+            let currentValue = document.getElementById("div-section-" + section + "-card-" + card).innerHTML;
+            console.log(currentValue);
+            if (!currentValue.includes("<textarea ")) {
+                let template = TEMP_INPUT_EDIT.replaceAll("{SECTION}", section).replaceAll("{CARD}", card).replaceAll("{CURRENT_VALUE}", currentValue);
+                document.getElementById("div-section-" + section + "-card-" + card).innerHTML = template;
+                document.getElementById("input-section-" + section + "-card-" + card).focus();
+            }
+        }
+
+        function closeCard(section, card) {
+            console.log("closing card:", section, card);
+            sections[section]["tasks"][card]["state"] = "close";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function archiveTitle(section) {
+            console.log("archiving project:", section);
+            sections[section]["state"] = "archive";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function archiveCard(section, card) {
+            console.log("archiving card:", section, card);
+            sections[section]["tasks"][card]["state"] = "archive";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function importantTask(section, card) {
+            console.log("making card important:", section);
+            sections[section]["tasks"][card]["state"] = "important";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function unImportantTask(section, card) {
+            console.log("un-making card important:", section, card);
+            sections[section]["tasks"][card]["state"] = "active";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function reOpenTitle(section) {
+            console.log("re-opening project:", section);
+            sections[section]["state"] = "active";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function reOpenCard(section, card) {
+            console.log("re-opening card:", section, card);
+            sections[section]["tasks"][card]["state"] = "active";
+            renderSections();
+            recentChanges = true;
+        }
+
+        function updateTitleName(section) {
+            let key = window.event.keyCode;
+            if (key == 13) {
+                let newTitleName = document.getElementById("input-section-title-" + section).value;
+                document.getElementById("span-section-title-" + section).innerHTML = newTitleName;
+                sections[section]["name"] = newTitleName;
+                recentChanges = true;
+            }
+        }
+
+        function updateTaskName(section, card) {
+            let key = window.event.keyCode;
+            if (key == 13) {
+                let newTaskName = document.getElementById("input-section-" + section + "-card-" + card).value;
+                document.getElementById("div-section-" + section + "-card-" + card).innerHTML = newTaskName;
+                sections[section]["tasks"][card]["title"] = newTaskName;
+                console.log("new task is set:", newTaskName);
+                let currentClassName = document.getElementById("div-section-" + section + "-card-" + card).className;
+                document.getElementById("div-section-" + section + "-card-" + card).className = currentClassName.replace(" editing-card", "");
+                recentChanges = true;
+            }
+        }
+
+        function prioritizeTitle(section) {
+            console.log("prioritizing project:", section);
+            let movingTask = JSON.parse(JSON.stringify(sections[section]));
+            sections.splice(section, 1);
+            sections.splice(0, 0, movingTask);
+            renderSections();
+            console.log("putting into DB");
+            recentChanges = true;
+        }
+
+        function prioritizeTask(section, card) {
+            console.log("prioritizing card:", section, card);
+            let movingTask = JSON.parse(JSON.stringify(sections[section]["tasks"][card]));
+            sections[section]["tasks"].splice(card, 1);
+            sections[section]["tasks"].splice(0, 0, movingTask);
+            renderSections();
+            console.log("putting into DB");
+            recentChanges = true;
+        }
+
+        function deleteTitle(section) {
+            console.log("deleting project:", section);
+            sections.splice(section, 1);
+            renderSections();
+            recentChanges = true;
+        }
+
+        function deleteCard(section, card) {
+            console.log("deleting card:", card, "from section:", section);
+            sections[section]["tasks"].splice(card, 1);
+            renderSections();
+            recentChanges = true;
+        }
+
+        function renderSections() {
+            let sectionsContent = "";
+            console.log(sections);
+            let cardsList = [];
+            let titlesList = [];
+            for (let section = 0; section < sections.length; section++) {
+                if ((!showArchived) && (sections[section]["state"] == "archive")) continue;
+                titlesList.push("span-section-title-" + section);
+                let tags = "";
+                if (tagsEnabled) {
+                    for (let tagName of sections[section]["tags"]) {
+                        tags += "#" + tagName;
+                    }
+                    if (tags.length == 0) {
+                        tags = "no-tags";
+                    }
+                    tags += "<button class='button-tags-edit'></button>";
+                }
+                let cards = "";
+                let closed = 0;
+                let outOf = 0;
+                for (let card = 0; card < sections[section]["tasks"].length; card++) {
+                    if (sections[section]["tasks"][card]["state"] == "active") {
+                        cards += TEMP_CARD.replace("{TASK}", sections[section]["tasks"][card]["title"]).replaceAll("{CARD}", card);
+                        outOf++;
+                        cardsList.push("div-section-" + section + "-card-" + card);
+                    } else if (sections[section]["tasks"][card]["state"] == "important") {
+                        cards += TEMP_CARD_IMPORTANT.replace("{TASK}", sections[section]["tasks"][card]["title"]).replaceAll("{CARD}", card);
+                        outOf++;
+                        cardsList.push("div-section-" + section + "-card-" + card);
+                    }
+                    if (showArchived) {
+                        if (sections[section]["tasks"][card]["state"] == "archive") {
+                            cards += TEMP_CARD_ARCHIVED.replace("{TASK}", sections[section]["tasks"][card]["title"]).replaceAll("{CARD}", card);
+                            outOf++;
+                            cardsList.push("div-section-" + section + "-card-" + card);
+                        }
+                    }
+                }
+                cards += TEMP_CARD_ADD;
+                for (let card = 0; card < sections[section]["tasks"].length; card++) {
+                    if (sections[section]["tasks"][card]["state"] == "close") {
+                        cards += TEMP_CARD_CLOSED.replace("{TASK}", sections[section]["tasks"][card]["title"]).replaceAll("{CARD}", card);
+                        closed++;
+                        outOf++;
+                        cardsList.push("div-section-" + section + "-card-" + card);
+                    }
+                }
+                let count = closed + "/" + outOf;
+                let oneSection = TEMP_HEADER.replace("{TITLE}", sections[section]["name"]).replace("{COUNT}", count).replace("{TAGS}", tags) + TEMP_CARDS.replaceAll("{CARD}", cards);
+                if (sections[section]["state"] == "archive") {
+                    sectionsContent += TEMP_SECTION_ARCHIVED.replace("{SECTION_CONTENT}", oneSection).replaceAll("{SECTION}", section);
+                } else {
+                    sectionsContent += TEMP_SECTION.replace("{SECTION_CONTENT}", oneSection).replaceAll("{SECTION}", section);
+                }
+            }
+
+            document.getElementById("div-sections").innerHTML = sectionsContent;
+            for (cardName of cardsList) {
+                document.getElementById(cardName).oncontextmenu = rightClick;
+            }
+
+            console.log(titlesList);
+            for (titleName of titlesList) {
+                document.getElementById(titleName).oncontextmenu = rightClick;
+            }
+        }
+
+        async function ensurePersistenceStorage() {
+            let isPersisted = await navigator.storage.persisted();
+            if (!isPersisted) {
+                let granted = await navigator.storage.persist();
+                console.log(granted ? "storage is now persistence" : "storage is still temporary");
+            } else {
+                console.log("storage is already persistence");
+            }
+        }
+
+        function openDBConnection() {
+            let request = indexedDB.open("loremDB", 1);
+            request.onupgradeneeded = function (event) {
+                let db = event.target.result;
+                if (!db.objectStoreNames.contains("loremOS")) {
+                    db.createObjectStore("loremOS", { keyPath: "id" });
+                }
+            };
+            ensurePersistenceStorage();
+            getData();
+        }
+
+        function getData() {
+            let request = indexedDB.open("loremDB", 1);
+            request.onsuccess = function (event) {
+                let db = event.target.result;
+                let getRequest = db.transaction("loremOS").objectStore("loremOS").get("data");
+                getRequest.onsuccess = function () {
+                    let response = getRequest.result;
+                    if (response) {
+                        if ("data" in response) {
+                            sections = response["data"];
+                            renderSections();
+                        }
+                    }
+                }
+            }
+        }
+
+        function putData(data) {
+            let request = indexedDB.open("loremDB", 1);
+            request.onsuccess = function (event) {
+                let db = event.target.result;
+                let transaction = db.transaction("loremOS", "readwrite");
+                let store = transaction.objectStore("loremOS");
+                store.put({ id: "data", data: data });
+                transaction.oncomplete = function () {
+                    console.log("Data added");
+                }
+            }
+        }
+
+        function getHash() {
+            let hashValue = sections.length ? btoa(JSON.stringify(sections)) : "";
+            document.getElementById("input-hash").value = hashValue;
+            document.getElementById("div-sections").style.marginTop = "200px";
+            document.getElementById("div-hash").style.display = "block";
+        }
+
+        function setHash() {
+            let hashValue = document.getElementById("input-hash").value;
+            sections = JSON.parse(atob(hashValue));
+            putData(sections);
+            renderSections();
+        }
+
+        function hideHash() {
+            document.getElementById("div-sections").style.marginTop = "150px";
+            document.getElementById("div-hash").style.display = "none";
+        }
+
+        function initialRender() {
+            updateArchiveToggle(showArchived);
+            document.getElementById("span-menu-button-toggle-tags").style.display = "none";
+            hideHash();
+        }
+
+        function periodicDataUpdate() {
+            console.log("checking if recentChanges", recentChanges);
+            if (recentChanges) {
+                putData(sections);
+                recentChanges = false;
+            }
+        }
+
+        function periodicSyncStatus() {
+            if (recentChanges) {
+                document.getElementById("span-menu-button-sync").innerHTML = "To Sync";
+                document.getElementById("span-menu-button-sync").style.backgroundColor = "rgba(230, 50, 20, 0.4)";
+            } else {
+                document.getElementById("span-menu-button-sync").innerHTML = "On Sync";
+                document.getElementById("span-menu-button-sync").style.backgroundColor = "rgba(50, 230, 20, 0.4)";
+            }
+        }
+
+        setInterval(periodicSyncStatus, 1000);
+        setInterval(periodicDataUpdate, 5000);
+        initialRender();
+        openDBConnection();
+    </script>
+
+</html>

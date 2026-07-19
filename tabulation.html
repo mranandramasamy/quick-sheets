@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DP Tabulation Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #ffffff; 
+            color: #37352f; 
+        }
+        
+        .notion-border { border: 1px solid #e0e0e0; }
+        .notion-input {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 8px 12px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-size: 14px;
+            background: #fbfbfa;
+        }
+        .notion-input:focus { border-color: #000; background: #fff; }
+        
+        .notion-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #37352f;
+            color: #ffffff;
+            border: 1px solid #37352f;
+        }
+        .btn-primary:hover { background: #2f2d27; }
+        .btn-secondary {
+            background: #ffffff;
+            color: #37352f;
+            border: 1px solid #e0e0e0;
+        }
+        .btn-secondary:hover { background: #f0f0f0; border-color: #37352f; }
+
+        .table-wrapper {
+            max-width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fbfbfa;
+        }
+        table { border-collapse: collapse; }
+        th, td { border: 1px solid #e0e0e0; padding: 4px; }
+        th { 
+            background: #f0f0f0; 
+            font-weight: 500; 
+            font-size: 12px; 
+            color: #787774;
+            min-width: 40px;
+        }
+        
+        .cell-input { 
+            width: 50px; 
+            height: 36px; 
+            text-align: center; 
+            border: 1px solid transparent; 
+            outline: none; 
+            font-family: 'Inter', monospace;
+            font-size: 14px;
+            background: transparent;
+            border-radius: 3px;
+        }
+        .cell-input:focus { border: 1px solid #37352f; background: #fff; }
+        .cell-input.incorrect { background-color: #ffeef0; color: #ff6b6b; font-weight: 600; }
+        .cell-input.correct { background-color: #f0fff4; color: #48bb78; font-weight: 600;}
+    </style>
+</head>
+<body class="p-6 md:p-12 max-w-6xl mx-auto flex flex-col md:flex-row gap-12 h-screen overflow-hidden">
+    <aside class="w-full md:w-1/3 flex flex-col gap-6 h-full overflow-y-auto pr-4">
+        <header class="border-b border-gray-200 pb-4">
+            <h1 class="text-2xl font-bold mb-2 tracking-tight">DP Tabulation Master</h1>
+            <p class="text-sm text-gray-500 leading-relaxed">Select an algorithm, configure the inputs, and practice filling out the table. Use <code class="bg-gray-100 px-1 rounded">INF</code> for infinity, <code class="bg-gray-100 px-1 rounded">T</code> or <code class="bg-gray-100 px-1 rounded">F</code> for booleans.</p>
+        </header>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Algorithm</label>
+                <select id="algo-select" class="notion-input w-full cursor-pointer">
+                    <!-- Options populated via JS -->
+                </select>
+            </div>
+            
+            <div id="dynamic-inputs" class="space-y-4 border-l-2 border-gray-200 pl-4 py-2">
+                <!-- Inputs populated via JS -->
+            </div>
+
+            <div class="pt-4 flex gap-3">
+                <button id="btn-generate" class="notion-btn btn-primary flex-1">Generate Table</button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="w-full md:w-2/3 flex flex-col gap-6 h-full relative">
+        <div class="flex justify-between items-end border-b border-gray-200 pb-4">
+            <div>
+                <h2 id="current-algo-title" class="text-lg font-semibold">Workspace</h2>
+                <p id="current-algo-desc" class="text-xs text-gray-500 mt-1">Configure inputs to begin.</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="btn-reveal" class="notion-btn btn-secondary hidden text-xs">Reveal Answers</button>
+                <button id="btn-evaluate" class="notion-btn btn-primary hidden">Evaluate</button>
+            </div>
+        </div>
+
+        <div id="table-container" class="table-wrapper flex-1 overflow-auto p-4 flex items-start justify-center bg-gray-50/50">
+            <div class="text-gray-400 text-sm mt-20">No table generated yet.</div>
+        </div>
+    </main>
+
+    <script>
+        
+        // Helper: Parse comma separated arrays
+        const parseArray = (str) => str.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        
+        // Helper: Format Output for UI comparison
+        const formatVal = (val) => {
+            if (val === Infinity) return 'INF';
+            if (val === true) return 'T';
+            if (val === false) return 'F';
+            return val.toString();
+        };
+
+        const algorithms = [
+            {
+                id: '01_knapsack',
+                name: '0/1 Knapsack',
+                desc: 'Maximize value without exceeding capacity. Cannot reuse items.',
+                inputs: [
+                    { id: 'cap', label: 'Capacity (W)', default: '5' },
+                    { id: 'items', label: 'Items (Wt:Val, comma sep)', default: '1:10, 3:40, 4:50' }
+                ],
+                solve: (inps) => {
+                    const W = parseInt(inps.cap);
+                    const items = inps.items.split(',').map(s => {
+                        const [w, v] = s.split(':');
+                        return { w: parseInt(w), v: parseInt(v) };
+                    });
+                    const N = items.length;
+                    
+                    let dp = Array(N + 1).fill().map(() => Array(W + 1).fill(0));
+                    
+                    for (let i = 1; i <= N; i++) {
+                        for (let j = 1; j <= W; j++) {
+                            if (items[i-1].w <= j) {
+                                dp[i][j] = Math.max(dp[i-1][j], items[i-1].v + dp[i-1][j - items[i-1].w]);
+                            } else {
+                                dp[i][j] = dp[i-1][j];
+                            }
+                        }
+                    }
+                    
+                    let rHeaders = ["0 (Empty)"];
+                    items.forEach((it, i) => rHeaders.push(`Item ${i+1} (${it.w}kg,$${it.v})`));
+                    let cHeaders = Array.from({length: W + 1}, (_, i) => `${i}kg`);
+                    return { table: dp, rHeaders, cHeaders };
+                }
+            },
+            {
+                id: 'unbounded_knapsack',
+                name: 'Unbounded Knapsack',
+                desc: 'Maximize value without exceeding capacity. CAN reuse items.',
+                inputs: [
+                    { id: 'cap', label: 'Capacity (W)', default: '4' },
+                    { id: 'items', label: 'Items (Wt:Val, comma sep)', default: '1:20, 2:30, 3:45' }
+                ],
+                solve: (inps) => {
+                    const W = parseInt(inps.cap);
+                    const items = inps.items.split(',').map(s => {
+                        const [w, v] = s.split(':');
+                        return { w: parseInt(w), v: parseInt(v) };
+                    });
+                    const N = items.length;
+                    
+                    let dp = Array(N + 1).fill().map(() => Array(W + 1).fill(0));
+                    
+                    for (let i = 1; i <= N; i++) {
+                        for (let j = 1; j <= W; j++) {
+                            if (items[i-1].w <= j) {
+                                // Notice the difference: dp[i] instead of dp[i-1] for the inclusion case
+                                dp[i][j] = Math.max(dp[i-1][j], items[i-1].v + dp[i][j - items[i-1].w]);
+                            } else {
+                                dp[i][j] = dp[i-1][j];
+                            }
+                        }
+                    }
+                    
+                    let rHeaders = ["0 (Empty)"];
+                    items.forEach((it, i) => rHeaders.push(`Item ${i+1} (${it.w}kg,$${it.v})`));
+                    let cHeaders = Array.from({length: W + 1}, (_, i) => `${i}kg`);
+                    return { table: dp, rHeaders, cHeaders };
+                }
+            },
+            {
+                id: 'edit_distance',
+                name: 'Edit Distance',
+                desc: 'Min operations to convert Word 1 to Word 2.',
+                inputs: [
+                    { id: 'w1', label: 'Word 1 (Rows)', default: 'kitten' },
+                    { id: 'w2', label: 'Word 2 (Cols)', default: 'sitting' }
+                ],
+                solve: (inps) => {
+                    const w1 = inps.w1.trim();
+                    const w2 = inps.w2.trim();
+                    let dp = Array(w1.length + 1).fill().map(() => Array(w2.length + 1).fill(0));
+                    
+                    for (let i = 0; i <= w1.length; i++) dp[i][0] = i;
+                    for (let j = 0; j <= w2.length; j++) dp[0][j] = j;
+                    
+                    for (let i = 1; i <= w1.length; i++) {
+                        for (let j = 1; j <= w2.length; j++) {
+                            if (w1[i-1] === w2[j-1]) {
+                                dp[i][j] = dp[i-1][j-1];
+                            } else {
+                                dp[i][j] = Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1;
+                            }
+                        }
+                    }
+                    return { 
+                        table: dp, 
+                        rHeaders: ["''", ...w1.split('')], 
+                        cHeaders: ["''", ...w2.split('')] 
+                    };
+                }
+            },
+            {
+                id: 'unique_paths',
+                name: 'Unique Paths',
+                desc: 'Count ways from top-left to bottom-right.',
+                inputs: [
+                    { id: 'm', label: 'Rows (m)', default: '3' },
+                    { id: 'n', label: 'Cols (n)', default: '3' }
+                ],
+                solve: (inps) => {
+                    const m = parseInt(inps.m);
+                    const n = parseInt(inps.n);
+                    let dp = Array(m).fill().map(() => Array(n).fill(0));
+                    
+                    for(let i=0; i<m; i++) {
+                        for(let j=0; j<n; j++) {
+                            if(i===0 || j===0) dp[i][j] = 1;
+                            else dp[i][j] = dp[i-1][j] + dp[i][j-1];
+                        }
+                    }
+                    return {
+                        table: dp,
+                        rHeaders: Array.from({length: m}, (_, i) => `Row ${i}`),
+                        cHeaders: Array.from({length: n}, (_, i) => `Col ${i}`)
+                    }
+                }
+            },
+            {
+                id: 'unique_paths_obs',
+                name: 'Unique Paths (Obstacles)',
+                desc: 'Same as above, but 1s in grid are obstacles.',
+                inputs: [
+                    { id: 'grid', label: 'Grid (rows sep by /, vals sep by ,)', default: '0,0,0 / 0,1,0 / 0,0,0' }
+                ],
+                solve: (inps) => {
+                    const grid = inps.grid.split('/').map(r => r.split(',').map(n => parseInt(n.trim())));
+                    const m = grid.length;
+                    const n = grid[0].length;
+                    let dp = Array(m).fill().map(() => Array(n).fill(0));
+                    
+                    for(let i=0; i<m; i++) {
+                        for(let j=0; j<n; j++) {
+                            if(grid[i][j] === 1) dp[i][j] = 0;
+                            else if(i===0 && j===0) dp[i][j] = 1;
+                            else {
+                                let top = i > 0 ? dp[i-1][j] : 0;
+                                let left = j > 0 ? dp[i][j-1] : 0;
+                                dp[i][j] = top + left;
+                            }
+                        }
+                    }
+                    return {
+                        table: dp,
+                        rHeaders: Array.from({length: m}, (_, i) => `Row ${i}`),
+                        cHeaders: Array.from({length: n}, (_, i) => `Col ${i}`)
+                    }
+                }
+            },
+            {
+                id: 'fib',
+                name: 'Fibonacci',
+                desc: 'Find the nth Fibonacci number.',
+                inputs: [{ id: 'n', label: 'N', default: '8' }],
+                solve: (inps) => {
+                    const n = parseInt(inps.n);
+                    let dp = Array(n + 1).fill(0);
+                    if(n > 0) dp[1] = 1;
+                    for (let i = 2; i <= n; i++) dp[i] = dp[i-1] + dp[i-2];
+                    return {
+                        table: [dp], // Wrap in array to act as 2D for renderer
+                        rHeaders: ["Fib(i)"],
+                        cHeaders: Array.from({length: n+1}, (_, i) => `i=${i}`)
+                    }
+                }
+            },
+            {
+                id: 'coin_change',
+                name: 'Coin Change (Min Coins)',
+                desc: 'Min coins to make target amount. Use INF for infinity.',
+                inputs: [
+                    { id: 'amt', label: 'Target Amount', default: '11' },
+                    { id: 'coins', label: 'Coins (comma sep)', default: '1,2,5' }
+                ],
+                solve: (inps) => {
+                    const amt = parseInt(inps.amt);
+                    const coins = parseArray(inps.coins);
+                    let dp = Array(coins.length + 1).fill().map(() => Array(amt + 1).fill(Infinity));
+                    
+                    for(let i=0; i<=coins.length; i++) dp[i][0] = 0;
+                    
+                    for(let i=1; i<=coins.length; i++) {
+                        for(let j=1; j<=amt; j++) {
+                            if(coins[i-1] <= j) {
+                                dp[i][j] = Math.min(dp[i-1][j], 1 + dp[i][j - coins[i-1]]);
+                            } else {
+                                dp[i][j] = dp[i-1][j];
+                            }
+                        }
+                    }
+                    return {
+                        table: dp,
+                        rHeaders: ["0 (No Coins)", ...coins.map(c => `Coin ${c}`)],
+                        cHeaders: Array.from({length: amt+1}, (_, i) => `Amt ${i}`)
+                    }
+                }
+            },
+            {
+                id: 'lis',
+                name: 'Longest Increasing Subsequence',
+                desc: 'Find length of LIS in array.',
+                inputs: [{ id: 'nums', label: 'Array (comma sep)', default: '10,9,2,5,3,7,101,18' }],
+                solve: (inps) => {
+                    const nums = parseArray(inps.nums);
+                    let dp = Array(nums.length).fill(1);
+                    for (let i = 1; i < nums.length; i++) {
+                        for (let j = 0; j < i; j++) {
+                            if (nums[i] > nums[j]) {
+                                dp[i] = Math.max(dp[i], dp[j] + 1);
+                            }
+                        }
+                    }
+                    return { table: [dp], rHeaders: ["Length"], cHeaders: nums.map((n,i) => `[${i}]: ${n}`) };
+                }
+            },
+            {
+                id: 'lcs',
+                name: 'Longest Common Subsequence',
+                desc: 'Find length of LCS between two strings.',
+                inputs: [
+                    { id: 't1', label: 'Text 1 (Rows)', default: 'abcde' },
+                    { id: 't2', label: 'Text 2 (Cols)', default: 'ace' }
+                ],
+                solve: (inps) => {
+                    const t1 = inps.t1.trim();
+                    const t2 = inps.t2.trim();
+                    let dp = Array(t1.length + 1).fill().map(() => Array(t2.length + 1).fill(0));
+                    
+                    for(let i=1; i<=t1.length; i++){
+                        for(let j=1; j<=t2.length; j++){
+                            if(t1[i-1] === t2[j-1]) dp[i][j] = 1 + dp[i-1][j-1];
+                            else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                        }
+                    }
+                    return { table: dp, rHeaders: ["''", ...t1.split('')], cHeaders: ["''", ...t2.split('')] };
+                }
+            },
+            {
+                id: 'word_break',
+                name: 'Word Break',
+                desc: 'Can string be segmented into dict words? Use T / F.',
+                inputs: [
+                    { id: 's', label: 'String', default: 'leetcode' },
+                    { id: 'dict', label: 'Dict (comma sep)', default: 'leet,code' }
+                ],
+                solve: (inps) => {
+                    const s = inps.s.trim();
+                    const dict = inps.dict.split(',').map(w => w.trim());
+                    let dp = Array(s.length + 1).fill(false);
+                    dp[0] = true;
+                    
+                    for(let i=1; i<=s.length; i++){
+                        for(let j=0; j<i; j++){
+                            if(dp[j] && dict.includes(s.substring(j, i))){
+                                dp[i] = true;
+                                break;
+                            }
+                        }
+                    }
+                    return { 
+                        table: [dp], 
+                        rHeaders: ["Valid"], 
+                        cHeaders: ["Start", ...s.split('').map((c,i) => `idx ${i+1} (${c})`)] 
+                    };
+                }
+            },
+            {
+                id: 'subset_sum',
+                name: 'Partition Equal Subset Sum',
+                desc: 'Can array be partitioned into equal sums? Use T / F.',
+                inputs: [
+                    { id: 'nums', label: 'Numbers (comma sep)', default: '1,5,11,5' }
+                ],
+                solve: (inps) => {
+                    const nums = parseArray(inps.nums);
+                    let sum = nums.reduce((a,b)=>a+b,0);
+                    
+                    // If odd sum, it's impossible. We still generate table up to sum/2 (rounded down) just for UI completion.
+                    let target = Math.floor(sum / 2);
+                    let dp = Array(nums.length + 1).fill().map(() => Array(target + 1).fill(false));
+                    
+                    for(let i=0; i<=nums.length; i++) dp[i][0] = true; // sum 0 is always possible
+                    
+                    for(let i=1; i<=nums.length; i++) {
+                        for(let j=1; j<=target; j++) {
+                            if(j >= nums[i-1]) {
+                                dp[i][j] = dp[i-1][j] || dp[i-1][j - nums[i-1]];
+                            } else {
+                                dp[i][j] = dp[i-1][j];
+                            }
+                        }
+                    }
+                    return {
+                        table: dp,
+                        rHeaders: ["0 (None)", ...nums.map(n => `Num ${n}`)],
+                        cHeaders: Array.from({length: target+1}, (_, i) => `Sum ${i}`)
+                    }
+                }
+            }
+        ];
+
+        let activeGroundTruth = null;
+
+        const selectEl = document.getElementById('algo-select');
+        const inputsContainer = document.getElementById('dynamic-inputs');
+        const generateBtn = document.getElementById('btn-generate');
+        const evalBtn = document.getElementById('btn-evaluate');
+        const revealBtn = document.getElementById('btn-reveal');
+        const tableContainer = document.getElementById('table-container');
+        const titleEl = document.getElementById('current-algo-title');
+        const descEl = document.getElementById('current-algo-desc');
+
+        // Populate dropdown
+        algorithms.forEach(algo => {
+            const opt = document.createElement('option');
+            opt.value = algo.id;
+            opt.textContent = algo.name;
+            selectEl.appendChild(opt);
+        });
+
+        const renderInputs = () => {
+            const algoId = selectEl.value;
+            const algo = algorithms.find(a => a.id === algoId);
+            
+            inputsContainer.innerHTML = '';
+            algo.inputs.forEach(inp => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = `
+                    <label class="block text-[11px] font-semibold text-gray-400 uppercase mb-1">${inp.label}</label>
+                    <input type="text" id="input-${inp.id}" value="${inp.default}" class="notion-input w-full">
+                `;
+                inputsContainer.appendChild(wrapper);
+            });
+        };
+
+        selectEl.addEventListener('change', renderInputs);
+        
+        generateBtn.addEventListener('click', () => {
+            const algoId = selectEl.value;
+            const algo = algorithms.find(a => a.id === algoId);
+            
+            // Gather inputs
+            let currentInputs = {};
+            algo.inputs.forEach(inp => {
+                currentInputs[inp.id] = document.getElementById(`input-${inp.id}`).value;
+            });
+
+            // Update Header
+            titleEl.textContent = algo.name;
+            descEl.textContent = algo.desc;
+
+            try {
+                // Solve
+                const { table, rHeaders, cHeaders } = algo.solve(currentInputs);
+                activeGroundTruth = table;
+
+                // Build HTML Table
+                let html = '<table><thead><tr><th></th>';
+                
+                // Col headers
+                cHeaders.forEach(ch => {
+                    html += `<th>${ch}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+
+                // Rows
+                table.forEach((row, i) => {
+                    html += `<tr><th>${rHeaders[i]}</th>`;
+                    row.forEach((cell, j) => {
+                        html += `<td><input type="text" class="cell-input" data-r="${i}" data-c="${j}" /></td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+
+                tableContainer.innerHTML = html;
+                
+                // Show actions
+                evalBtn.classList.remove('hidden');
+                revealBtn.classList.remove('hidden');
+
+            } catch (e) {
+                tableContainer.innerHTML = `<div class="text-red-500 text-sm bg-red-50 p-4 rounded border border-red-100">Error generating table. Please check input formats.</div>`;
+                console.error(e);
+            }
+        });
+
+        evalBtn.addEventListener('click', () => {
+            if (!activeGroundTruth) return;
+            const inputs = document.querySelectorAll('.cell-input');
+            
+            inputs.forEach(inp => {
+                const r = parseInt(inp.getAttribute('data-r'));
+                const c = parseInt(inp.getAttribute('data-c'));
+                
+                let truth = formatVal(activeGroundTruth[r][c]);
+                let userVal = inp.value.trim().toUpperCase(); // Uppercase helps with t/f and inf
+
+                if (userVal === '') {
+                    inp.classList.remove('correct', 'incorrect');
+                    return;
+                }
+
+                // Handle boolean synonyms
+                if(truth === 'T' && (userVal === 'TRUE' || userVal === '1')) userVal = 'T';
+                if(truth === 'F' && (userVal === 'FALSE' || userVal === '0')) userVal = 'F';
+
+                if (userVal === truth) {
+                    inp.classList.remove('incorrect');
+                    inp.classList.add('correct');
+                } else {
+                    inp.classList.remove('correct');
+                    inp.classList.add('incorrect');
+                }
+            });
+        });
+
+        revealBtn.addEventListener('click', () => {
+            if (!activeGroundTruth) return;
+            if (confirm("Are you sure you want to reveal the answers? This will overwrite your current work.")) {
+                const inputs = document.querySelectorAll('.cell-input');
+                inputs.forEach(inp => {
+                    const r = parseInt(inp.getAttribute('data-r'));
+                    const c = parseInt(inp.getAttribute('data-c'));
+                    inp.value = formatVal(activeGroundTruth[r][c]);
+                    inp.classList.remove('incorrect', 'correct');
+                });
+            }
+        });
+
+        // Initialize first view
+        renderInputs();
+    </script>
+</body>
+</html>
